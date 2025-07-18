@@ -1,0 +1,24 @@
+Calculate revenue column
+=sales[quantity]*RELATED(products[Price])
+
+Calculate sales_qtr
+=CALCULATE(
+    VALUES(Apple_Fiscal_Quarters[Quarter]),
+    FILTER(
+        Apple_Fiscal_Quarters,
+        TRUNC(Sales[sale_date]) >= TRUNC(Apple_Fiscal_Quarters[Start_Date]) &&
+        TRUNC(Sales[sale_date]) <= TRUNC(Apple_Fiscal_Quarters[End_Date])
+    )
+)
+Calculate sale_year
+=CALCULATE(
+    VALUES(Apple_Fiscal_Quarters[Fiscal_Year]),
+    FILTER(
+        Apple_Fiscal_Quarters,
+        TRUNC(Sales[sale_date]) >= TRUNC(Apple_Fiscal_Quarters[Start_Date]) &&
+        TRUNC(Sales[sale_date]) <= TRUNC(Apple_Fiscal_Quarters[End_Date])
+    )
+)
+Merge sale_qtr and sale_year into sale_period
+=sales[sale_year] & " " & sales[sale_qtr] 
+

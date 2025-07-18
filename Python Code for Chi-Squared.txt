@@ -1,0 +1,51 @@
+import pandas as pd
+from scipy.stats import chisquare
+
+# Step 1: Load CSV files
+store_df = pd.read_csv("Apple Cat Sales by Store.csv")
+country_df = pd.read_csv("Apple Cat Sale by Country.csv")
+
+# Step 2: Normalize column names
+store_df.columns = store_df.columns.str.strip().str.lower().str.replace(" ", "_")
+country_df.columns = country_df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+# Step 3: Merge the two datasets
+merged_df = pd.merge(
+    store_df,
+    country_df,
+    on=["country", "sale_period", "category_name"],
+    suffixes=("_store", "_country")
+)
+
+# Step 4: Multiply percentage values by 100
+merged_df["perc_of_revue_(store)"] *= 100
+merged_df["perc_of_revenue_(country)"] *= 100
+
+# Step 5: Chi-squared test per store and sale period
+results = []
+for (store_id, sale_period), group in merged_df.groupby(["store_id", "sale_period"]):
+    observed = group["perc_of_revue_(store)"].values
+    expected = group["perc_of_revenue_(country)"].values
+
+    stat, p = chisquare(f_obs=observed, f_exp=expected)
+
+    results.append({
+        "store_id": store_id,
+        "sale_period": sale_period,
+        "chi2_stat": round(stat, 4),
+        "p_value": round(p, 4)
+    })
+
+# Step 6: Create DataFrame and merge with store metadata
+results_df = pd.DataFrame(results)
+summary_df = pd.merge(
+    results_df,
+    store_df[["store_id", "store_name", "country", "sale_period"]],
+    on=["store_id", "sale_period"],
+    how="left"
+)
+
+# Step 7: Select final table, export as csv,  and print first 40 rows
+final_table = summary_df[["country", "store_name", "sale_period", "chi2_stat", "p_value"]].drop_duplicates()
+final_table.to_csv("chi_squared_summary_rounded.csv", index=False)
+print(final_table.head(40))
